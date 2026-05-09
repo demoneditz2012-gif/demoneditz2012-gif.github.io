@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#667EEA" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LearnWords" />
+  <meta name="description" content="Vocabulary learning app for children" />
+
+  <title>Let's Learn Words!</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ========== RESET & BASE ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: 'Nunito', 'Segoe UI', sans-serif;
+      background: #FFF8F0;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; }
+    input, select { font-family: inherit; outline: none; -webkit-appearance: none; }
+
+    /* ========== SCREENS ========== */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: block; }
+
+    /* ========== HOME SCREEN ========== */
+    .home-header {
+      background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+      padding: 36px 24px 32px;
+      text-align: center;
+      border-radius: 0 0 36px 36px;
+      box-shadow: 0 8px 32px rgba(102,126,234,0.35);
+    }
+    .home-header .big-emoji { font-size: 56px; margin-bottom: 8px; }
+    .home-header h1 {
+      color: white; font-size: clamp(24px, 6vw, 36px);
+      font-weight: 900; letter-spacing: -0.5px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .home-header p {
+      color: rgba(255,255,255,0.88);
+      margin-top: 8px; font-size: clamp(14px, 3vw, 17px); font-weight: 600;
+    }
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(150px, 44%), 1fr));
+      gap: 16px;
+      padding: 26px 18px 40px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .category-tile {
+      border-radius: 22px;
+      padding: 20px 12px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 10px;
+      cursor: pointer; user-select: none;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      border: 3px solid transparent;
+    }
+    .category-tile:active { transform: scale(0.94); box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .category-tile .cat-icon { font-size: clamp(36px, 7vw, 50px); }
+    .category-tile .cat-name {
+      font-weight: 800; font-size: clamp(13px, 2.5vw, 17px);
+      color: #1F2937; text-align: center;
+    }
+    .cat-bar { border-radius: 20px; width: 30px; height: 4px; opacity: 0.55; }
+
+    /* ========== CARD GRID SCREEN ========== */
+    .grid-header {
+      padding: 18px 18px 16px;
+      display: flex; align-items: center; gap: 14px;
+      border-radius: 0 0 28px 28px;
+    }
+    .back-btn {
+      background: rgba(255,255,255,0.22);
+      border-radius: 50%; width: 48px; height: 48px;
+      font-size: 22px; color: white; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: transform 0.1s;
+    }
+    .back-btn:active { transform: scale(0.9); }
+    .grid-header-title { flex: 1; }
+    .grid-header-title .cat-icon-sm { font-size: 26px; }
+    .grid-header-title h2 {
+      color: white; font-size: clamp(19px, 4vw, 26px);
+      font-weight: 900; text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .praise-badge {
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px; padding: 8px 14px;
+      font-weight: 800; font-size: 15px;
+      animation: fadeInOut 1.5s ease forwards;
+      white-space: nowrap;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(150px, 44%), 1fr));
+      gap: 15px;
+      padding: 22px 16px 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .empty-state {
+      grid-column: 1/-1; text-align: center;
+      color: #9CA3AF; padding: 48px 0;
+      font-weight: 700; font-size: 17px;
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* ========== VOCAB CARD ========== */
+    .vocab-card {
+      border-radius: 28px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+      cursor: pointer; user-select: none;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 18px 10px; gap: 10px;
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      position: relative; overflow: hidden;
+      min-height: 145px;
+      border: 3px solid transparent;
+    }
+    .vocab-card:active {
+      transform: scale(0.93);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-color: rgba(0,0,0,0.12);
+    }
+    .vocab-card .card-emoji {
+      font-size: clamp(48px, 9vw, 70px);
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.10));
+    }
+    .vocab-card .card-word {
+      font-weight: 800;
+      font-size: clamp(14px, 2.8vw, 19px);
+      color: #1F2937; text-align: center; line-height: 1.2;
+    }
+    .star-burst {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 44px; pointer-events: none; z-index: 10;
+      animation: starPop 1.0s ease-out forwards;
+    }
+
+    /* ========== ADMIN SCREEN ========== */
+    #screen-admin {
+      background: #111827;
+      color: white;
+      padding-bottom: 40px;
+    }
+    .admin-header {
+      background: linear-gradient(135deg, #1F2937, #374151);
+      padding: 22px 18px;
+      border-bottom: 1px solid #374151;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .admin-close-btn {
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%; width: 44px; height: 44px;
+      color: white; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .admin-body { padding: 22px 18px; max-width: 560px; margin: 0 auto; }
+    .admin-card {
+      background: #1F2937; border-radius: 20px;
+      padding: 22px; margin-bottom: 24px;
+      border: 1px solid #374151;
+    }
+    .admin-card h3 { color: #F9FAFB; font-size: 16px; font-weight: 800; margin-bottom: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 13px; }
+    .form-label { color: #D1D5DB; font-size: 13px; font-weight: 700; }
+    .form-input {
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid #374151; background: #374151;
+      color: white; font-size: 16px; font-weight: 600;
+      width: 100%;
+    }
+    .form-input::placeholder { color: #6B7280; }
+    .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .color-dot {
+      width: 34px; height: 34px; border-radius: 50%;
+      cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      border: 3px solid transparent; transition: border-color 0.1s;
+    }
+    .color-dot.selected { border-color: #667EEA; }
+    .card-preview {
+      border-radius: 14px; padding: 14px;
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 13px;
+    }
+    .card-preview .prev-emoji { font-size: 36px; }
+    .card-preview .prev-word { font-weight: 800; color: #1F2937; font-size: 17px; }
+    .add-btn {
+      background: linear-gradient(135deg, #667EEA, #764BA2);
+      color: white; border-radius: 13px;
+      padding: 15px; font-size: 16px; font-weight: 800;
+      width: 100%; text-align: center;
+    }
+    .custom-card-item {
+      background: #1F2937; border-radius: 13px;
+      padding: 13px 15px; display: flex;
+      align-items: center; gap: 13px;
+      border: 1px solid #374151; margin-bottom: 10px;
+    }
+    .custom-card-item .item-emoji { font-size: 30px; }
+    .custom-card-item .item-info { flex: 1; }
+    .custom-card-item .item-word { font-weight: 800; font-size: 15px; }
+    .custom-card-item .item-cat { color: #9CA3AF; font-size: 12px; }
+    .custom-card-item .item-color {
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 1px solid #374151; flex-shrink: 0;
+    }
+    .delete-btn {
+      background: #DC2626; border-radius: 9px;
+      color: white; padding: 7px 11px; font-size: 14px; font-weight: 700;
+    }
+    .admin-tip {
+      margin-top: 24px; background: #1F2937;
+      border-radius: 14px; padding: 14px;
+      border: 1px solid #374151;
+      color: #9CA3AF; font-size: 12px; text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ========== PIN SCREEN ========== */
+    #screen-pin {
+      background: #1F2937;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px; gap: 20px; color: white;
+    }
+    .pin-icon { font-size: 52px; }
+    #screen-pin h2 { font-size: 22px; font-weight: 800; }
+    #screen-pin p { color: #9CA3AF; font-size: 14px; text-align: center; }
+    #pin-input {
+      padding: 14px 20px; border-radius: 16px;
+      border: 2px solid #374151; background: #374151;
+      color: white; font-size: 20px; font-weight: 700;
+      text-align: center; width: 100%; max-width: 280px;
+    }
+    .pin-buttons { display: flex; gap: 12px; width: 100%; max-width: 280px; }
+    .pin-cancel { flex: 1; padding: 14px; border-radius: 14px; background: #374151; color: #9CA3AF; font-size: 16px; font-weight: 800; }
+    .pin-enter  { flex: 1; padding: 14px; border-radius: 14px; background: #667EEA; color: white;   font-size: 16px; font-weight: 800; }
+
+    /* ========== INSTALL BANNER ========== */
+    #install-banner {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+      background: linear-gradient(135deg, #667EEA, #764BA2);
+      padding: 16px 20px; color: white;
+      flex-direction: row; align-items: center; gap: 14px;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
+    }
+    #install-banner.show { display: flex; }
+    #install-banner .banner-text { flex: 1; font-size: 14px; font-weight: 700; line-height: 1.4; }
+    #install-banner .banner-text strong { font-size: 16px; display: block; }
+    #install-btn {
+      background: white; color: #667EEA;
+      border-radius: 12px; padding: 10px 18px;
+      font-size: 14px; font-weight: 900; white-space: nowrap;
+    }
+    #dismiss-btn {
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%; width: 32px; height: 32px;
+      color: white; font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes starPop {
+      0%   { opacity: 1; transform: translate(-50%,-50%) scale(0.4); }
+      55%  { opacity: 1; transform: translate(-50%,-50%) scale(1.5); }
+      100% { opacity: 0; transform: translate(-50%,-65%) scale(1);   }
+    }
+    @keyframes fadeInOut {
+      0%   { opacity: 0; transform: scale(0.85); }
+      20%  { opacity: 1; transform: scale(1);    }
+      80%  { opacity: 1; transform: scale(1);    }
+      100% { opacity: 0; transform: scale(0.9);  }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     🏠 HOME SCREEN
+============================================================ -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <div class="big-emoji">🌈</div>
+    <h1>Let's Learn Words!</h1>
+    <p>Tap a picture — hear the word!</p>
+  </div>
+  <div class="category-grid" id="category-grid">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ============================================================
+     📋 CARD GRID SCREEN
+============================================================ -->
+<div id="screen-grid" class="screen">
+  <div class="grid-header" id="grid-header">
+    <button class="back-btn" id="back-btn">←</button>
+    <div class="grid-header-title" id="grid-header-title">
+      <div class="cat-icon-sm" id="grid-cat-icon"></div>
+      <h2 id="grid-cat-name"></h2>
+    </div>
+    <div class="praise-badge" id="praise-badge" style="display:none"></div>
+  </div>
+  <div class="card-grid" id="card-grid">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ============================================================
+     🔐 PIN SCREEN
+============================================================ -->
+<div id="screen-pin" class="screen">
+  <div class="pin-icon">🔐</div>
+  <h2>Caregiver Mode</h2>
+  <p>Enter PIN to manage picture cards</p>
+  <input type="password" id="pin-input" placeholder="Enter PIN (default: 1234)" inputmode="numeric" />
+  <div class="pin-buttons">
+    <button class="pin-cancel" id="pin-cancel-btn">Cancel</button>
+    <button class="pin-enter"  id="pin-enter-btn">Enter</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     ⚙️ ADMIN SCREEN
+============================================================ -->
+<div id="screen-admin" class="screen">
+  <div class="admin-header">
+    <button class="admin-close-btn" id="admin-close-btn">←</button>
+    <div>
+      <h2 style="font-size:20px;font-weight:800;">⚙️ Caregiver Mode</h2>
+      <p style="color:#9CA3AF;font-size:12px;margin-top:2px;">Manage vocabulary cards</p>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <!-- ADD CARD FORM -->
+    <div class="admin-card">
+      <h3>➕ Add New Card</h3>
+
+      <div class="form-group">
+        <label class="form-label">Word or Phrase</label>
+        <input type="text" id="form-word" class="form-input" placeholder="e.g. Bicycle" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Emoji / Symbol</label>
+        <input type="text" id="form-emoji" class="form-input" placeholder="🚲"
+               style="font-size:28px;text-align:center;" value="⭐" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="form-category" class="form-input" style="color:white;background:#374151;">
+          <option value="food">Food</option>
+          <option value="animals">Animals</option>
+          <option value="emotions">Emotions</option>
+          <option value="household">Household</option>
+          <option value="actions">Actions</option>
+          <option value="colors">Colors</option>
+          <option value="numbers">Numbers</option>
+          <option value="routines">Routines</option>
+          <option value="custom" selected>Custom ✨</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Card Color</label>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="card-preview" id="card-preview" style="background:#FEF9C3;">
+        <span class="prev-emoji" id="prev-emoji">⭐</span>
+        <span class="prev-word" id="prev-word">Preview</span>
+      </div>
+
+      <button class="add-btn" id="add-card-btn">Add Card ✓</button>
+    </div>
+
+    <!-- CUSTOM CARDS LIST -->
+    <div id="custom-cards-section" style="display:none;">
+      <h3 style="color:#F9FAFB;font-size:16px;font-weight:800;margin-bottom:14px;">
+        📋 My Cards (<span id="custom-count">0</span>)
+      </h3>
+      <div id="custom-cards-list"></div>
+    </div>
+
+    <div class="admin-tip">
+      💡 <strong style="color:#F9FAFB;">Tip:</strong> Tap any category title 5× quickly to open admin mode.
+      Default PIN: <strong style="color:#667EEA;">1234</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     📲 INSTALL BANNER
+============================================================ -->
+<div id="install-banner">
+  <div class="banner-text">
+    <strong>📲 Install this app!</strong>
+    Add to home screen for the best experience
+  </div>
+  <button id="install-btn">Install</button>
+  <button id="dismiss-btn">✕</button>
+</div>
+
+
+<script>
+// ================================================================
+// 🎨 THEME — category colors & icons
+// ================================================================
+const CATEGORIES = {
+  food:      { bg:"#FFF3CD", accent:"#F59E0B", icon:"🍽️" },
+  animals:   { bg:"#D1FAE5", accent:"#059669", icon:"🐾" },
+  emotions:  { bg:"#FCE7F3", accent:"#EC4899", icon:"💛" },
+  household: { bg:"#DBEAFE", accent:"#3B82F6", icon:"🏠" },
+  actions:   { bg:"#EDE9FE", accent:"#7C3AED", icon:"⚡" },
+  colors:    { bg:"#FEF9C3", accent:"#CA8A04", icon:"🎨" },
+  numbers:   { bg:"#FFEDD5", accent:"#EA580C", icon:"🔢" },
+  routines:  { bg:"#CFFAFE", accent:"#0891B2", icon:"🌟" },
+  custom:    { bg:"#F3F4F6", accent:"#6B7280", icon:"✨" },
+};
+
+const CARD_COLORS = [
+  "#FEE2E2","#FFEDD5","#FEF9C3","#D1FAE5",
+  "#DBEAFE","#EDE9FE","#FCE7F3","#CFFAFE"
+];
+
+const ADMIN_PIN = "1234";
+
+// ================================================================
+// 📚 DEFAULT VOCABULARY DATA
+// ================================================================
+const DEFAULT_CARDS = [
+  {id:"f1",  word:"Apple",       emoji:"🍎", category:"food",      color:"#FEE2E2"},
+  {id:"f2",  word:"Banana",      emoji:"🍌", category:"food",      color:"#FEF9C3"},
+  {id:"f3",  word:"Milk",        emoji:"🥛", category:"food",      color:"#F0FDF4"},
+  {id:"f4",  word:"Bread",       emoji:"🍞", category:"food",      color:"#FEF3C7"},
+  {id:"f5",  word:"Water",       emoji:"💧", category:"food",      color:"#DBEAFE"},
+  {id:"f6",  word:"Chicken",     emoji:"🍗", category:"food",      color:"#FFEDD5"},
+  {id:"f7",  word:"Pizza",       emoji:"🍕", category:"food",      color:"#FEE2E2"},
+  {id:"f8",  word:"Cookie",      emoji:"🍪", category:"food",      color:"#FEF3C7"},
+  {id:"a1",  word:"Dog",         emoji:"🐶", category:"animals",   color:"#FEF3C7"},
+  {id:"a2",  word:"Cat",         emoji:"🐱", category:"animals",   color:"#FCE7F3"},
+  {id:"a3",  word:"Fish",        emoji:"🐠", category:"animals",   color:"#DBEAFE"},
+  {id:"a4",  word:"Bird",        emoji:"🐦", category:"animals",   color:"#CFFAFE"},
+  {id:"a5",  word:"Rabbit",      emoji:"🐰", category:"animals",   color:"#FDF4FF"},
+  {id:"a6",  word:"Duck",        emoji:"🦆", category:"animals",   color:"#FEF9C3"},
+  {id:"a7",  word:"Horse",       emoji:"🐴", category:"animals",   color:"#FEF3C7"},
+  {id:"a8",  word:"Bear",        emoji:"🐻", category:"animals",   color:"#FFEDD5"},
+  {id:"e1",  word:"Happy",       emoji:"😊", category:"emotions",  color:"#FEF9C3"},
+  {id:"e2",  word:"Sad",         emoji:"😢", category:"emotions",  color:"#DBEAFE"},
+  {id:"e3",  word:"Angry",       emoji:"😠", category:"emotions",  color:"#FEE2E2"},
+  {id:"e4",  word:"Scared",      emoji:"😨", category:"emotions",  color:"#EDE9FE"},
+  {id:"e5",  word:"Tired",       emoji:"😴", category:"emotions",  color:"#F0FDF4"},
+  {id:"e6",  word:"Excited",     emoji:"🤩", category:"emotions",  color:"#FFF3CD"},
+  {id:"e7",  word:"Hungry",      emoji:"😋", category:"emotions",  color:"#FFEDD5"},
+  {id:"e8",  word:"Love",        emoji:"🥰", category:"emotions",  color:"#FCE7F3"},
+  {id:"h1",  word:"Chair",       emoji:"🪑", category:"household", color:"#F3F4F6"},
+  {id:"h2",  word:"Bed",         emoji:"🛏️", category:"household", color:"#DBEAFE"},
+  {id:"h3",  word:"Toilet",      emoji:"🚽", category:"household", color:"#F0FDF4"},
+  {id:"h4",  word:"Shower",      emoji:"🚿", category:"household", color:"#CFFAFE"},
+  {id:"h5",  word:"Phone",       emoji:"📱", category:"household", color:"#EDE9FE"},
+  {id:"h6",  word:"Book",        emoji:"📚", category:"household", color:"#FEF3C7"},
+  {id:"h7",  word:"TV",          emoji:"📺", category:"household", color:"#F3F4F6"},
+  {id:"h8",  word:"Door",        emoji:"🚪", category:"household", color:"#FFEDD5"},
+  {id:"ac1", word:"Eat",         emoji:"🍴", category:"actions",   color:"#FEF3C7"},
+  {id:"ac2", word:"Drink",       emoji:"🥤", category:"actions",   color:"#DBEAFE"},
+  {id:"ac3", word:"Sleep",       emoji:"💤", category:"actions",   color:"#EDE9FE"},
+  {id:"ac4", word:"Play",        emoji:"🎮", category:"actions",   color:"#FCE7F3"},
+  {id:"ac5", word:"Walk",        emoji:"🚶", category:"actions",   color:"#D1FAE5"},
+  {id:"ac6", word:"Read",        emoji:"📖", category:"actions",   color:"#FFF3CD"},
+  {id:"ac7", word:"Wash",        emoji:"🧼", category:"actions",   color:"#CFFAFE"},
+  {id:"ac8", word:"Help",        emoji:"🙋", category:"actions",   color:"#FEE2E2"},
+  {id:"c1",  word:"Red",         emoji:"🔴", category:"colors",    color:"#FEE2E2"},
+  {id:"c2",  word:"Blue",        emoji:"🔵", category:"colors",    color:"#DBEAFE"},
+  {id:"c3",  word:"Green",       emoji:"🟢", category:"colors",    color:"#D1FAE5"},
+  {id:"c4",  word:"Yellow",      emoji:"🟡", category:"colors",    color:"#FEF9C3"},
+  {id:"c5",  word:"Orange",      emoji:"🟠", category:"colors",    color:"#FFEDD5"},
+  {id:"c6",  word:"Purple",      emoji:"🟣", category:"colors",    color:"#EDE9FE"},
+  {id:"c7",  word:"Pink",        emoji:"🩷", category:"colors",    color:"#FCE7F3"},
+  {id:"c8",  word:"White",       emoji:"⬜", category:"colors",    color:"#F9FAFB"},
+  {id:"n1",  word:"One",         emoji:"1️⃣", category:"numbers",   color:"#FEE2E2"},
+  {id:"n2",  word:"Two",         emoji:"2️⃣", category:"numbers",   color:"#FFEDD5"},
+  {id:"n3",  word:"Three",       emoji:"3️⃣", category:"numbers",   color:"#FEF9C3"},
+  {id:"n4",  word:"Four",        emoji:"4️⃣", category:"numbers",   color:"#D1FAE5"},
+  {id:"n5",  word:"Five",        emoji:"5️⃣", category:"numbers",   color:"#DBEAFE"},
+  {id:"n6",  word:"Six",         emoji:"6️⃣", category:"numbers",   color:"#EDE9FE"},
+  {id:"n7",  word:"Seven",       emoji:"7️⃣", category:"numbers",   color:"#FCE7F3"},
+  {id:"n8",  word:"Eight",       emoji:"8️⃣", category:"numbers",   color:"#FFF3CD"},
+  {id:"r1",  word:"Wake Up",     emoji:"🌅", category:"routines",  color:"#FEF9C3"},
+  {id:"r2",  word:"Brush Teeth", emoji:"🪥", category:"routines",  color:"#CFFAFE"},
+  {id:"r3",  word:"Get Dressed", emoji:"👕", category:"routines",  color:"#EDE9FE"},
+  {id:"r4",  word:"Breakfast",   emoji:"🥣", category:"routines",  color:"#FFF3CD"},
+  {id:"r5",  word:"School",      emoji:"🏫", category:"routines",  color:"#DBEAFE"},
+  {id:"r6",  word:"Lunch",       emoji:"🥪", category:"routines",  color:"#D1FAE5"},
+  {id:"r7",  word:"Bath",        emoji:"🛁", category:"routines",  color:"#CFFAFE"},
+  {id:"r8",  word:"Bedtime",     emoji:"🌙", category:"routines",  color:"#EDE9FE"},
+];
+
+// ================================================================
+// 🔊 AUDIO ENGINE
+// ================================================================
+const Audio = {
+  speak(word, rate=0.85, pitch=1.1) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.rate = rate; u.pitch = pitch; u.volume = 1;
+    // Wait for voices to load (Chrome async issue)
+    const trySpeak = () => {
+      const voices = speechSynthesis.getVoices();
+      const pick = voices.find(v =>
+        v.name.toLowerCase().includes("samantha") ||
+        v.name.toLowerCase().includes("karen")    ||
+        v.name.toLowerCase().includes("google uk english female") ||
+        (v.lang.startsWith("en") && v.name.toLowerCase().includes("female"))
+      ) || voices.find(v => v.lang.startsWith("en"));
+      if (pick) u.voice = pick;
+      speechSynthesis.speak(u);
+    };
+    if (speechSynthesis.getVoices().length) trySpeak();
+    else { speechSynthesis.onvoiceschanged = () => { speechSynthesis.onvoiceschanged = null; trySpeak(); }; }
+  },
+  cancel() { speechSynthesis.cancel(); }
+};
+
+// ================================================================
+// 💾 STORAGE
+// ================================================================
+const Store = {
+  load()        { try { const s=localStorage.getItem("vocabCards_v3"); return s?JSON.parse(s):[]; } catch{return[];} },
+  save(custom)  { try { localStorage.setItem("vocabCards_v3", JSON.stringify(custom)); } catch{} }
+};
+
+// ================================================================
+// 🗂️ APP STATE
+// ================================================================
+let customCards = Store.load();
+let allCards    = () => [...DEFAULT_CARDS, ...customCards];
+let activeCategory = null;
+let headerTapCount = 0;
+let headerTapTimer = null;
+let selectedColor  = CARD_COLORS[4]; // default blue
+
+// ================================================================
+// 📺 SCREEN NAVIGATION
+// ================================================================
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+// ================================================================
+// 🏠 RENDER HOME
+// ================================================================
+function renderHome() {
+  const grid = document.getElementById("category-grid");
+  grid.innerHTML = "";
+  Object.entries(CATEGORIES).forEach(([key, val]) => {
+    const label = key === "routines" ? "Routines" : key.charAt(0).toUpperCase() + key.slice(1);
+    const tile = document.createElement("div");
+    tile.className = "category-tile";
+    tile.style.background = val.bg;
+    tile.style.borderColor = val.accent + "22";
+    tile.innerHTML = `
+      <span class="cat-icon">${val.icon}</span>
+      <span class="cat-name">${label}</span>
+      <div class="cat-bar" style="background:${val.accent};"></div>
+    `;
+    tile.addEventListener("click", () => selectCategory(key));
+    grid.appendChild(tile);
+  });
+}
+
+// ================================================================
+// 📋 RENDER CARD GRID
+// ================================================================
+function selectCategory(cat) {
+  activeCategory = cat;
+  const ct    = CATEGORIES[cat] || CATEGORIES.custom;
+  const label = cat === "routines" ? "Daily Routines" : cat.charAt(0).toUpperCase() + cat.slice(1);
+
+  // Style header
+  const header = document.getElementById("grid-header");
+  header.style.background = `linear-gradient(135deg, ${ct.accent} 0%, ${ct.accent}BB 100%)`;
+  header.style.boxShadow  = `0 6px 24px ${ct.accent}44`;
+  document.getElementById("grid-cat-icon").textContent = ct.icon;
+  document.getElementById("grid-cat-name").textContent = label;
+  document.getElementById("praise-badge").style.display = "none";
+
+  // Announce category name
+  Audio.speak(label, 0.9, 1.1);
+
+  renderCardGrid();
+  showScreen("grid");
+}
+
+function renderCardGrid() {
+  const grid = document.getElementById("card-grid");
+  grid.innerHTML = "";
+  const cards = allCards().filter(c => c.category === activeCategory);
+
+  if (!cards.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✨</div>
+        No cards yet in this category.<br>
+        <span style="font-size:14px;font-weight:500;">Ask a caregiver to add some!</span>
+      </div>`;
+    return;
+  }
+
+  cards.forEach(card => {
+    const el = document.createElement("div");
+    el.className = "vocab-card";
+    el.style.background = card.color || "#FFF3CD";
+    el.innerHTML = `
+      <span class="card-emoji">${card.emoji}</span>
+      <span class="card-word">${card.word}</span>
+    `;
+    el.addEventListener("click", () => tapCard(el, card));
+    grid.appendChild(el);
+  });
+}
+
+function tapCard(el, card) {
+  // Speak the word
+  Audio.speak(card.word);
+  // Star burst animation
+  const star = document.createElement("div");
+  star.className = "star-burst";
+  star.textContent = "⭐";
+  el.appendChild(star);
+  star.addEventListener("animationend", () => star.remove());
+  // Show praise badge
+  showPraise();
+}
+
+let praiseTimer = null;
+const PRAISES = ["⭐ Great job!", "🎉 Amazing!", "👏 Well done!", "🌟 Excellent!"];
+function showPraise() {
+  const badge = document.getElementById("praise-badge");
+  badge.textContent = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+  badge.style.display = "block";
+  badge.style.animation = "none";
+  badge.offsetHeight; // reflow
+  badge.style.animation = "fadeInOut 1.5s ease forwards";
+  clearTimeout(praiseTimer);
+  praiseTimer = setTimeout(() => { badge.style.display = "none"; }, 1500);
+}
+
+// ================================================================
+// 🔐 PIN / ADMIN
+// ================================================================
+function openPinScreen() {
+  document.getElementById("pin-input").value = "";
+  showScreen("pin");
+}
+
+function checkPin() {
+  const val = document.getElementById("pin-input").value;
+  if (val === ADMIN_PIN) {
+    renderAdmin();
+    showScreen("admin");
+  } else {
+    alert("Incorrect PIN. Default PIN is 1234");
+    document.getElementById("pin-input").value = "";
+  }
+}
+
+// ================================================================
+// ⚙️ ADMIN PANEL
+// ================================================================
+function renderAdmin() {
+  // Build color picker
+  const picker = document.getElementById("color-picker");
+  picker.innerHTML = "";
+  CARD_COLORS.forEach(col => {
+    const dot = document.createElement("div");
+    dot.className = "color-dot" + (col === selectedColor ? " selected" : "");
+    dot.style.background = col;
+    dot.addEventListener("click", () => {
+      selectedColor = col;
+      document.querySelectorAll(".color-dot").forEach(d => d.classList.remove("selected"));
+      dot.classList.add("selected");
+      updatePreview();
+    });
+    picker.appendChild(dot);
+  });
+
+  // Build custom cards list
+  refreshCustomList();
+  updatePreview();
+}
+
+function updatePreview() {
+  const word  = document.getElementById("form-word").value  || "Preview";
+  const emoji = document.getElementById("form-emoji").value || "⭐";
+  document.getElementById("card-preview").style.background = selectedColor;
+  document.getElementById("prev-emoji").textContent = emoji;
+  document.getElementById("prev-word").textContent  = word;
+}
+
+function addCard() {
+  const word     = document.getElementById("form-word").value.trim();
+  const emoji    = document.getElementById("form-emoji").value.trim() || "⭐";
+  const category = document.getElementById("form-category").value;
+  if (!word) { alert("Please enter a word or phrase."); return; }
+  customCards.push({ id: "custom_" + Date.now(), word, emoji, category, color: selectedColor });
+  Store.save(customCards);
+  document.getElementById("form-word").value  = "";
+  document.getElementById("form-emoji").value = "⭐";
+  selectedColor = CARD_COLORS[4];
+  renderAdmin();
+  // Show subtle feedback
+  const btn = document.getElementById("add-card-btn");
+  const orig = btn.textContent;
+  btn.textContent = "✅ Card Added!";
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+function deleteCard(id) {
+  if (!confirm("Delete this card?")) return;
+  customCards = customCards.filter(c => c.id !== id);
+  Store.save(customCards);
+  refreshCustomList();
+}
+
+function refreshCustomList() {
+  const section = document.getElementById("custom-cards-section");
+  const list    = document.getElementById("custom-cards-list");
+  const count   = document.getElementById("custom-count");
+  if (!customCards.length) { section.style.display = "none"; return; }
+  section.style.display = "block";
+  count.textContent = customCards.length;
+  list.innerHTML = "";
+  customCards.forEach(card => {
+    const item = document.createElement("div");
+    item.className = "custom-card-item";
+    item.innerHTML = `
+      <span class="item-emoji">${card.emoji}</span>
+      <div class="item-info">
+        <div class="item-word">${card.word}</div>
+        <div class="item-cat">${card.category}</div>
+      </div>
+      <div class="item-color" style="background:${card.color};"></div>
+      <button class="delete-btn">🗑️</button>
+    `;
+    item.querySelector(".delete-btn").addEventListener("click", () => deleteCard(card.id));
+    list.appendChild(item);
+  });
+}
+
+// ================================================================
+// 📲 PWA INSTALL PROMPT
+// ================================================================
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show banner after 3 seconds
+  setTimeout(() => {
+    document.getElementById("install-banner").classList.add("show");
+  }, 3000);
+});
+window.addEventListener("appinstalled", () => {
+  document.getElementById("install-banner").classList.remove("show");
+  deferredPrompt = null;
+});
+
+// ================================================================
+// 🔗 EVENT LISTENERS
+// ================================================================
+// Back button
+document.getElementById("back-btn").addEventListener("click", () => {
+  Audio.cancel();
+  showScreen("home");
+});
+
+// Header: secret 5-tap admin trigger
+document.getElementById("grid-header-title").addEventListener("click", () => {
+  headerTapCount++;
+  clearTimeout(headerTapTimer);
+  headerTapTimer = setTimeout(() => { headerTapCount = 0; }, 2000);
+  if (headerTapCount >= 5) { headerTapCount = 0; openPinScreen(); }
+});
+
+// PIN screen buttons
+document.getElementById("pin-cancel-btn").addEventListener("click", () => showScreen("grid"));
+document.getElementById("pin-enter-btn").addEventListener("click", checkPin);
+document.getElementById("pin-input").addEventListener("keydown", (e) => { if (e.key === "Enter") checkPin(); });
+
+// Admin screen close
+document.getElementById("admin-close-btn").addEventListener("click", () => showScreen("home"));
+
+// Admin form live preview
+document.getElementById("form-word").addEventListener("input", updatePreview);
+document.getElementById("form-emoji").addEventListener("input", updatePreview);
+
+// Add card button
+document.getElementById("add-card-btn").addEventListener("click", addCard);
+
+// Install banner buttons
+document.getElementById("install-btn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById("install-banner").classList.remove("show");
+});
+document.getElementById("dismiss-btn").addEventListener("click", () => {
+  document.getElementById("install-banner").classList.remove("show");
+});
+
+// ================================================================
+// 🔧 SERVICE WORKER REGISTRATION
+// ================================================================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(reg => console.log("✅ Service Worker registered:", reg.scope))
+      .catch(err => console.warn("SW registration failed:", err));
+  });
+}
+
+// ================================================================
+// 🚀 INIT
+// ================================================================
+renderHome();
+</script>
+</body>
+</html>
